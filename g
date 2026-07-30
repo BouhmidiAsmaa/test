@@ -130,14 +130,29 @@ namespace Fondaction.SGRC.Custom.Activities
                 if (unauthorizedFields.Any())
                 {
                     tracingService.Trace(
-                        "Champs refusés : " +
+                        "AVERTISSEMENT - Contact actionnaire : les champs suivants ne sont pas " +
+                        "autorisés et seront ignorés (non enregistrés) : " +
                         string.Join(", ", unauthorizedFields));
 
-                    throw new InvalidPluginExecutionException(
-                        "Ce contact est un actionnaire et seules certaines informations peuvent être modifiées.");
+                    // On retire du Target les champs non autorisés au lieu de bloquer
+                    // toute la mise à jour : seuls les champs whitelistés sont enregistrés.
+                    foreach (var field in unauthorizedFields)
+                    {
+                        // La clé réelle dans target.Attributes peut différer en casse
+                        // de la version lower-cased utilisée pour la comparaison.
+                        var actualKey = target.Attributes.Keys
+                            .FirstOrDefault(k => string.Equals(k, field, StringComparison.OrdinalIgnoreCase));
+
+                        if (actualKey != null)
+                        {
+                            target.Attributes.Remove(actualKey);
+                        }
+                    }
                 }
 
-                tracingService.Trace("Tous les champs modifiés sont autorisés.");
+                tracingService.Trace(
+                    "Mise à jour autorisée pour les champs restants : " +
+                    string.Join(", ", target.Attributes.Keys));
 
                 #endregion
             }
