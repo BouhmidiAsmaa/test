@@ -26,6 +26,7 @@ export class PhoneFormatter implements ComponentFramework.StandardControl<IInput
   private regardingName = "";   // ← fetched async
   private regardingId = "";
   private regardingType = "";
+  private pendingValue: string | undefined;
 
   public init(
     context: ComponentFramework.Context<IInputs>,
@@ -57,7 +58,11 @@ export class PhoneFormatter implements ComponentFramework.StandardControl<IInput
 
   private syncFromContext(context: ComponentFramework.Context<IInputs>): void {
     this.context = context;
-    this.value = context.parameters.Phone.raw ?? "";
+    const contextValue = context.parameters.Phone.raw ?? "";
+    if (this.pendingValue === undefined || contextValue === this.pendingValue) {
+      this.value = contextValue;
+      this.pendingValue = undefined;
+    }
     this.disabled = context.mode.isControlDisabled;
     this.required = context.parameters.Phone.attributes?.RequiredLevel === 2;
 
@@ -97,6 +102,8 @@ export class PhoneFormatter implements ComponentFramework.StandardControl<IInput
   private handleValueChange = (v: string): void => {
     if (this.disabled) return;
     this.value = v;
+    this.pendingValue = v;
+    this.render();
     this.notifyOutputChanged();
   };
 
